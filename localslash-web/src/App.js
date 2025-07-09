@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import CustomerApp from './components/CustomerApp';
 import StoreApp from './components/StoreApp';
-import './styles/globals.css';
+import './App.css';
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState('welcome');
