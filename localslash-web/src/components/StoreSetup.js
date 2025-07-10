@@ -24,34 +24,42 @@ const StoreSetup = ({ user, onSetupComplete }) => {
   
   // Initialize Google Places Autocomplete
   useEffect(() => {
-    // Check if Google Maps is loaded
-    if (window.google && window.google.maps && window.google.maps.places && searchInputRef.current && !autocompleteRef.current) {
+    const initializeGooglePlaces = async () => {
       try {
-        autocompleteRef.current = new window.google.maps.places.Autocomplete(searchInputRef.current, {
-          types: ['establishment'],
-          fields: ['place_id', 'name', 'formatted_address', 'geometry', 'formatted_phone_number', 'website']
-        });
+        // Dynamically load Google Maps API
+        const { loadGoogleMaps } = await import('../utils/googleMaps');
+        await loadGoogleMaps();
         
-        autocompleteRef.current.addListener('place_changed', () => {
-          const place = autocompleteRef.current.getPlace();
-          if (place.geometry) {
-            setSelectedPlace(place);
-            setStoreForm(prevForm => ({
-              ...prevForm,
-              name: place.name || prevForm.name,
-              address: place.formatted_address || prevForm.address,
-              place_id: place.place_id || '',
-              latitude: place.geometry.location.lat(),
-              longitude: place.geometry.location.lng(),
-              phone: place.formatted_phone_number || prevForm.phone,
-              website: place.website || prevForm.website
-            }));
-          }
-        });
+        // Initialize autocomplete after Google Maps is loaded
+        if (window.google && window.google.maps && window.google.maps.places && searchInputRef.current && !autocompleteRef.current) {
+          autocompleteRef.current = new window.google.maps.places.Autocomplete(searchInputRef.current, {
+            types: ['establishment'],
+            fields: ['place_id', 'name', 'formatted_address', 'geometry', 'formatted_phone_number', 'website']
+          });
+          
+          autocompleteRef.current.addListener('place_changed', () => {
+            const place = autocompleteRef.current.getPlace();
+            if (place.geometry) {
+              setSelectedPlace(place);
+              setStoreForm(prevForm => ({
+                ...prevForm,
+                name: place.name || prevForm.name,
+                address: place.formatted_address || prevForm.address,
+                place_id: place.place_id || '',
+                latitude: place.geometry.location.lat(),
+                longitude: place.geometry.location.lng(),
+                phone: place.formatted_phone_number || prevForm.phone,
+                website: place.website || prevForm.website
+              }));
+            }
+          });
+        }
       } catch (error) {
-        console.error('Error initializing Google Places:', error);
+        console.error('Error loading Google Maps or initializing Places:', error);
       }
-    }
+    };
+    
+    initializeGooglePlaces();
   }, []);
   
   const handleSubmit = async (e) => {
@@ -321,9 +329,9 @@ const StoreSetup = ({ user, onSetupComplete }) => {
                   e.target.style.boxShadow = 'none';
                 }}
               />
-              {!window.google && (
+              {!process.env.REACT_APP_GOOGLE_MAPS_API_KEY && (
                 <p style={{ fontSize: '0.75rem', color: theme.colors.textSecondary, marginTop: '0.25rem' }}>
-                  Google Places search is not available. Please enter details manually below.
+                  Google Places search requires API key configuration. Please enter details manually below.
                 </p>
               )}
               
