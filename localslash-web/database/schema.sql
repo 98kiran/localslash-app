@@ -1,0 +1,2 @@
+-- Copy your entire SQL schema here
+-- (The one from the artifacts earlier)
