@@ -1,70 +1,68 @@
-# Getting Started with Create React App
+# LocalSlash - Local Deal Discovery App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A React-based application connecting local stores with nearby customers through location-based deals.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+### Store Owners
+- Create and manage deals
+- Store profile with Google Places integration
+- Analytics dashboard
+- Deal redemption tracking
 
-### `npm start`
+### Customers
+- Browse nearby deals
+- Search and filter by category, distance
+- Redeem deals with unique codes
+- Save favorite deals and stores
+- Track savings
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Setup
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Set up Supabase project and run the SQL schema
+4. Add Google Maps API key to `public/index.html`
+5. Create `.env.local` with your credentials (see `.env.example`)
+6. Run `npm start`
 
-### `npm test`
+## Technologies
+- React
+- Supabase (Auth & Database)
+- Google Places API
+- Lucide React Iconscat > README.md << 'EOF'
+# LocalSlash - Local Deal Discovery App
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+A React-based application connecting local stores with nearby customers through location-based deals.
 
-### `npm run build`
+## Features
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Store Owners
+- Create and manage deals
+- Store profile with Google Places integration
+- Analytics dashboard
+- Deal redemption tracking
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Customers
+- Browse nearby deals
+- Search and filter by category, distance
+- Redeem deals with unique codes
+- Save favorite deals and stores
+- Track savings
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Setup
 
-### `npm run eject`
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Set up Supabase project and run the SQL schema (see database/schema.sql)
+4. Add Google Maps API key to `public/index.html`
+5. Create `.env.local` with your credentials (see `.env.example`)
+6. Run `npm start`
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Technologies
+- React
+- Supabase (Auth & Database)
+- Google Places API
+- Lucide React Icons
+EOF
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
