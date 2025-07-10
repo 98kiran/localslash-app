@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { supabase } from '../services/supabase';
-import { X, Heart, MapPin, Phone, Clock, Calendar, Tag, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, Heart, MapPin, Phone, Clock, Calendar, Tag, CheckCircle, AlertCircle, ExternalLink } from 'lucide-react';
+import { theme } from '../styles/theme';
+import { buttonStyle } from '../styles/componentStyles';
 
 const DealDetails = ({ deal, onClose, user, isFavorite, onFavoritesUpdate }) => {
   const [showRedemptionCode, setShowRedemptionCode] = useState(false);
@@ -9,7 +11,7 @@ const DealDetails = ({ deal, onClose, user, isFavorite, onFavoritesUpdate }) => 
 
   const handleFavoriteToggle = async () => {
     if (!user) {
-      alert('Please sign in to save favorites');
+      alert('Please sign in to save favorites. Click the profile tab to create an account.');
       return;
     }
 
@@ -37,6 +39,7 @@ const DealDetails = ({ deal, onClose, user, isFavorite, onFavoritesUpdate }) => 
       onFavoritesUpdate();
     } catch (error) {
       console.error('Error toggling favorite:', error);
+      alert('Error updating favorites. Please try again.');
     }
   };
 
@@ -49,10 +52,8 @@ const DealDetails = ({ deal, onClose, user, isFavorite, onFavoritesUpdate }) => 
     setIsRedeeming(true);
     
     try {
-      // Generate redemption code
       const code = `LSH${Date.now().toString(36).toUpperCase()}`;
       
-      // Create redemption record
       const { error } = await supabase
         .from('deal_redemptions')
         .insert([{
@@ -64,7 +65,6 @@ const DealDetails = ({ deal, onClose, user, isFavorite, onFavoritesUpdate }) => 
       
       if (error) throw error;
       
-      // Update deal redemption count
       await supabase
         .from('deals')
         .update({ 
@@ -100,8 +100,8 @@ const DealDetails = ({ deal, onClose, user, isFavorite, onFavoritesUpdate }) => 
     window.open(mapsUrl, '_blank');
   };
 
-  return (
-    <div style={{
+  const styles = {
+    overlay: {
       position: 'fixed',
       top: 0,
       left: 0,
@@ -111,273 +111,404 @@ const DealDetails = ({ deal, onClose, user, isFavorite, onFavoritesUpdate }) => 
       zIndex: 50,
       display: 'flex',
       alignItems: 'flex-end',
-      justifyContent: 'center'
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        width: '100%',
-        maxWidth: '48rem',
-        borderRadius: '1rem 1rem 0 0',
-        maxHeight: '90vh',
-        overflowY: 'auto',
-        animation: 'slideUp 0.3s ease-out'
-      }}>
-        <style>{`
-          @keyframes slideUp {
-            from {
-              transform: translateY(100%);
-            }
-            to {
-              transform: translateY(0);
-            }
-          }
-        `}</style>
+      justifyContent: 'center',
+    },
+    
+    modal: {
+      backgroundColor: theme.colors.cardBackground,
+      width: '100%',
+      maxWidth: '48rem',
+      borderRadius: '1rem 1rem 0 0',
+      maxHeight: '85vh',
+      display: 'flex',
+      flexDirection: 'column',
+      animation: 'slideUp 0.3s ease-out'
+    },
+    
+    header: {
+      padding: theme.spacing.lg,
+      borderBottom: `1px solid ${theme.colors.border}`,
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      flexShrink: 0,
+    },
+    
+    closeButton: {
+      padding: theme.spacing.sm,
+      backgroundColor: 'transparent',
+      border: 'none',
+      cursor: 'pointer',
+      color: theme.colors.textSecondary,
+      borderRadius: theme.borderRadius.round,
+      transition: 'all 0.3s ease',
+    },
+    
+    content: {
+      flex: 1,
+      overflowY: 'auto',
+      padding: theme.spacing.lg,
+      paddingBottom: '120px', // Space for fixed button
+    },
+    
+    dealHeader: {
+      marginBottom: theme.spacing.lg,
+    },
+    
+    titleRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      gap: theme.spacing.md,
+      marginBottom: theme.spacing.sm,
+    },
+    
+    title: {
+      fontSize: 'clamp(1.25rem, 3vw, 1.5rem)',
+      fontWeight: 'bold',
+      color: theme.colors.textPrimary,
+      flex: 1,
+    },
+    
+    favoriteButton: {
+      padding: theme.spacing.sm,
+      backgroundColor: `${theme.colors.danger}10`,
+      border: 'none',
+      borderRadius: theme.borderRadius.round,
+      cursor: 'pointer',
+      transition: 'all 0.3s ease',
+      color: isFavorite ? theme.colors.danger : theme.colors.textSecondary,
+    },
+    
+    badge: {
+      display: 'inline-block',
+      backgroundColor: theme.colors.success,
+      color: 'white',
+      padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+      borderRadius: theme.borderRadius.pill,
+      fontSize: '1rem',
+      fontWeight: 'bold',
+      marginBottom: theme.spacing.md,
+    },
+    
+    description: {
+      color: theme.colors.textSecondary,
+      lineHeight: '1.6',
+      marginBottom: theme.spacing.lg,
+    },
+    
+    storeInfo: {
+      backgroundColor: `${theme.colors.primary}05`,
+      padding: theme.spacing.lg,
+      borderRadius: theme.borderRadius.large,
+      marginBottom: theme.spacing.lg,
+    },
+    
+    storeName: {
+      fontWeight: '600',
+      fontSize: '1.125rem',
+      marginBottom: theme.spacing.md,
+      color: theme.colors.textPrimary,
+    },
+    
+    storeDetail: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: theme.spacing.sm,
+      marginBottom: theme.spacing.sm,
+      color: theme.colors.primary,
+      textDecoration: 'none',
+      fontSize: '0.875rem',
+    },
+    
+    infoSection: {
+      marginBottom: theme.spacing.lg,
+    },
+    
+    sectionTitle: {
+      fontWeight: '600',
+      marginBottom: theme.spacing.md,
+      color: theme.colors.textPrimary,
+    },
+    
+    infoItem: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: theme.spacing.sm,
+      marginBottom: theme.spacing.sm,
+      color: theme.colors.textSecondary,
+      fontSize: '0.875rem',
+    },
+    
+    priceDisplay: {
+      backgroundColor: `${theme.colors.success}10`,
+      padding: theme.spacing.lg,
+      borderRadius: theme.borderRadius.large,
+      textAlign: 'center',
+      marginBottom: theme.spacing.lg,
+    },
+    
+    originalPrice: {
+      textDecoration: 'line-through',
+      color: theme.colors.textSecondary,
+      fontSize: '1.25rem',
+      marginRight: theme.spacing.md,
+    },
+    
+    discountPrice: {
+      color: theme.colors.success,
+      fontWeight: 'bold',
+      fontSize: '2rem',
+    },
+    
+    termsBox: {
+      backgroundColor: `${theme.colors.warning}10`,
+      padding: theme.spacing.md,
+      borderRadius: theme.borderRadius.medium,
+      marginBottom: theme.spacing.lg,
+    },
+    
+    termsHeader: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: theme.spacing.sm,
+      marginBottom: theme.spacing.sm,
+      fontWeight: '600',
+      color: theme.colors.warning,
+    },
+    
+    termsText: {
+      fontSize: '0.875rem',
+      color: theme.colors.textSecondary,
+    },
+    
+    fixedBottom: {
+      position: 'fixed',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: theme.colors.cardBackground,
+      padding: theme.spacing.lg,
+      borderTop: `1px solid ${theme.colors.border}`,
+      boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.05)',
+    },
+    
+    redeemButton: {
+      ...buttonStyle,
+      width: '100%',
+      backgroundColor: theme.colors.primary,
+      color: 'white',
+      padding: theme.spacing.md,
+      fontSize: '1.125rem',
+      fontWeight: 'bold',
+    },
+    
+    redeemButtonDisabled: {
+      backgroundColor: theme.colors.textSecondary,
+      cursor: 'not-allowed',
+      opacity: 0.5,
+    },
+    
+    redemptionSuccess: {
+      backgroundColor: `${theme.colors.success}10`,
+      border: `2px solid ${theme.colors.success}`,
+      borderRadius: theme.borderRadius.large,
+      padding: theme.spacing.lg,
+      textAlign: 'center',
+    },
+    
+    redemptionCode: {
+      backgroundColor: theme.colors.cardBackground,
+      padding: theme.spacing.md,
+      borderRadius: theme.borderRadius.medium,
+      fontSize: '1.5rem',
+      fontWeight: 'bold',
+      letterSpacing: '0.1em',
+      fontFamily: 'monospace',
+      margin: `${theme.spacing.md} 0`,
+    },
+  };
 
-        {/* Header */}
-        <div style={{
-          padding: '1rem',
-          borderBottom: '1px solid #e5e7eb',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          position: 'sticky',
-          top: 0,
-          backgroundColor: 'white'
-        }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Deal Details</h2>
-          <button
-            onClick={onClose}
-            style={{
-              padding: '0.5rem',
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            <X size={24} />
-          </button>
-        </div>
+  const responsiveStyles = `
+    @keyframes slideUp {
+      from {
+        transform: translateY(100%);
+      }
+      to {
+        transform: translateY(0);
+      }
+    }
+    
+    @media (min-width: ${theme.breakpoints.tablet}) {
+      .deal-modal {
+        border-radius: ${theme.borderRadius.xlarge} !important;
+        margin: ${theme.spacing.lg};
+        max-height: 80vh !important;
+      }
+    }
+  `;
 
-        {/* Content */}
-        <div style={{ padding: '1.5rem' }}>
-          {/* Deal Header */}
-          <div style={{ marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem' }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', flex: 1 }}>{deal.title}</h3>
-              <button
-                onClick={handleFavoriteToggle}
-                style={{
-                  padding: '0.5rem',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: isFavorite ? '#ef4444' : '#d1d5db'
-                }}
-              >
-                <Heart size={24} fill={isFavorite ? '#ef4444' : 'none'} />
-              </button>
-            </div>
-            
-            <div style={{
-              display: 'inline-block',
-              backgroundColor: '#dbeafe',
-              color: '#1e40af',
-              padding: '0.5rem 1rem',
-              borderRadius: '9999px',
-              fontSize: '1.125rem',
-              fontWeight: 'bold',
-              marginBottom: '1rem'
-            }}>
-              {getDiscountDisplay()}
-            </div>
-
-            <p style={{ color: '#374151', lineHeight: '1.6' }}>{deal.description}</p>
+  return (
+    <>
+      <style>{responsiveStyles}</style>
+      <div style={styles.overlay} onClick={onClose}>
+        <div 
+          className="deal-modal"
+          style={styles.modal} 
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div style={styles.header}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: theme.colors.textPrimary }}>
+              Deal Details
+            </h2>
+            <button
+              onClick={onClose}
+              style={styles.closeButton}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = `${theme.colors.textSecondary}10`}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <X size={24} />
+            </button>
           </div>
 
-          {/* Store Info */}
-          <div style={{
-            backgroundColor: '#f9fafb',
-            padding: '1rem',
-            borderRadius: '0.5rem',
-            marginBottom: '1.5rem'
-          }}>
-            <h4 style={{ fontWeight: '600', marginBottom: '0.75rem' }}>{deal.stores.name}</h4>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {/* Scrollable Content */}
+          <div style={styles.content}>
+            {/* Deal Header */}
+            <div style={styles.dealHeader}>
+              <div style={styles.titleRow}>
+                <h3 style={styles.title}>{deal.title}</h3>
+                <button
+                  onClick={handleFavoriteToggle}
+                  style={styles.favoriteButton}
+                  onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                  onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  <Heart size={24} fill={isFavorite ? theme.colors.danger : 'none'} />
+                </button>
+              </div>
+              
+              <div style={styles.badge}>
+                {getDiscountDisplay()}
+              </div>
+
+              <p style={styles.description}>{deal.description}</p>
+            </div>
+
+            {/* Store Info */}
+            <div style={styles.storeInfo}>
+              <h4 style={styles.storeName}>{deal.stores.name}</h4>
+              
               <button
                 onClick={openInMaps}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  color: '#2563eb',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: 0,
-                  textAlign: 'left'
-                }}
+                style={{ ...styles.storeDetail, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
               >
                 <MapPin size={16} />
-                <span style={{ fontSize: '0.875rem' }}>{deal.stores.address}</span>
+                <span>{deal.stores.address}</span>
+                <ExternalLink size={14} />
               </button>
               
               {deal.stores.phone && (
-                <a
-                  href={`tel:${deal.stores.phone}`}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    color: '#2563eb',
-                    textDecoration: 'none',
-                    fontSize: '0.875rem'
-                  }}
-                >
+                <a href={`tel:${deal.stores.phone}`} style={styles.storeDetail}>
                   <Phone size={16} />
                   <span>{deal.stores.phone}</span>
                 </a>
               )}
               
               {deal.distance && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', fontSize: '0.875rem' }}>
+                <div style={{ ...styles.storeDetail, color: theme.colors.textSecondary }}>
                   <MapPin size={16} />
                   <span>{deal.distance.toFixed(1)} miles away</span>
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Deal Details */}
-          <div style={{ marginBottom: '1.5rem' }}>
-            <h4 style={{ fontWeight: '600', marginBottom: '0.75rem' }}>Deal Information</h4>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280' }}>
+            {/* Deal Information */}
+            <div style={styles.infoSection}>
+              <h4 style={styles.sectionTitle}>Deal Information</h4>
+              
+              <div style={styles.infoItem}>
                 <Calendar size={16} />
-                <span style={{ fontSize: '0.875rem' }}>
-                  Valid from {new Date(deal.start_date).toLocaleDateString()} to {new Date(deal.end_date).toLocaleDateString()}
-                </span>
+                <span>Valid from {new Date(deal.start_date).toLocaleDateString()} to {new Date(deal.end_date).toLocaleDateString()}</span>
               </div>
               
               {deal.category && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280' }}>
+                <div style={styles.infoItem}>
                   <Tag size={16} />
-                  <span style={{ fontSize: '0.875rem' }}>{deal.category}</span>
+                  <span>{deal.category}</span>
                 </div>
               )}
               
               {deal.max_redemptions && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280' }}>
+                <div style={styles.infoItem}>
                   <CheckCircle size={16} />
-                  <span style={{ fontSize: '0.875rem' }}>
-                    {deal.max_redemptions - (deal.current_redemptions || 0)} redemptions remaining
-                  </span>
+                  <span>{deal.max_redemptions - (deal.current_redemptions || 0)} redemptions remaining</span>
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Price Display */}
-          {deal.original_price && (
-            <div style={{
-              backgroundColor: '#f0fdf4',
-              padding: '1rem',
-              borderRadius: '0.5rem',
-              marginBottom: '1.5rem',
-              textAlign: 'center'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem' }}>
-                <span style={{ 
-                  textDecoration: 'line-through', 
-                  color: '#6b7280',
-                  fontSize: '1.25rem'
-                }}>
+            {/* Price Display */}
+            {deal.original_price && (
+              <div style={styles.priceDisplay}>
+                <span style={styles.originalPrice}>
                   ${deal.original_price.toFixed(2)}
                 </span>
-                <span style={{ 
-                  color: '#059669',
-                  fontWeight: 'bold',
-                  fontSize: '2rem'
-                }}>
+                <span style={styles.discountPrice}>
                   ${deal.discount_price.toFixed(2)}
                 </span>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Terms & Conditions */}
-          {deal.terms_conditions && (
-            <div style={{
-              marginBottom: '1.5rem',
-              padding: '1rem',
-              backgroundColor: '#fef3c7',
-              borderRadius: '0.5rem'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <AlertCircle size={16} style={{ color: '#d97706' }} />
-                <h4 style={{ fontWeight: '600', color: '#92400e' }}>Terms & Conditions</h4>
+            {/* Terms & Conditions */}
+            {deal.terms_conditions && (
+              <div style={styles.termsBox}>
+                <div style={styles.termsHeader}>
+                  <AlertCircle size={16} />
+                  <span>Terms & Conditions</span>
+                </div>
+                <p style={styles.termsText}>{deal.terms_conditions}</p>
               </div>
-              <p style={{ fontSize: '0.875rem', color: '#92400e' }}>{deal.terms_conditions}</p>
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* Redemption Section */}
-          {!showRedemptionCode ? (
-            <button
-              onClick={handleRedeem}
-              disabled={isRedeeming || (deal.max_redemptions && deal.current_redemptions >= deal.max_redemptions)}
-              style={{
-                width: '100%',
-                padding: '1rem',
-                backgroundColor: deal.max_redemptions && deal.current_redemptions >= deal.max_redemptions ? '#d1d5db' : '#2563eb',
-                color: 'white',
-                borderRadius: '0.5rem',
-                border: 'none',
-                fontSize: '1.125rem',
-                fontWeight: 'bold',
-                cursor: deal.max_redemptions && deal.current_redemptions >= deal.max_redemptions ? 'not-allowed' : 'pointer',
-                opacity: isRedeeming ? 0.5 : 1
-              }}
-            >
-              {isRedeeming ? 'Generating Code...' : 
-               deal.max_redemptions && deal.current_redemptions >= deal.max_redemptions ? 'Deal Fully Redeemed' : 
-               'Redeem Deal'}
-            </button>
-          ) : (
-            <div style={{
-              backgroundColor: '#f0fdf4',
-              border: '2px solid #10b981',
-              borderRadius: '0.5rem',
-              padding: '1.5rem',
-              textAlign: 'center'
-            }}>
-              <CheckCircle size={48} style={{ color: '#10b981', margin: '0 auto 1rem' }} />
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                Deal Redeemed!
-              </h3>
-              <p style={{ color: '#6b7280', marginBottom: '1rem' }}>
-                Show this code at checkout:
-              </p>
-              <div style={{
-                backgroundColor: 'white',
-                padding: '1rem',
-                borderRadius: '0.375rem',
-                fontSize: '1.5rem',
-                fontWeight: 'bold',
-                letterSpacing: '0.1em',
-                fontFamily: 'monospace'
-              }}>
-                {redemptionCode}
+          {/* Fixed Bottom Section */}
+          <div style={styles.fixedBottom}>
+            {!showRedemptionCode ? (
+              <button
+                onClick={handleRedeem}
+                disabled={isRedeeming || (deal.max_redemptions && deal.current_redemptions >= deal.max_redemptions)}
+                style={{
+                  ...styles.redeemButton,
+                  ...(isRedeeming || (deal.max_redemptions && deal.current_redemptions >= deal.max_redemptions) ? styles.redeemButtonDisabled : {})
+                }}
+                onMouseOver={(e) => !isRedeeming && (e.currentTarget.style.backgroundColor = '#0051D5')}
+                onMouseOut={(e) => !isRedeeming && (e.currentTarget.style.backgroundColor = theme.colors.primary)}
+              >
+                {isRedeeming ? 'Generating Code...' : 
+                 deal.max_redemptions && deal.current_redemptions >= deal.max_redemptions ? 'Deal Fully Redeemed' : 
+                 'Redeem Deal'}
+              </button>
+            ) : (
+              <div style={styles.redemptionSuccess}>
+                <CheckCircle size={48} style={{ color: theme.colors.success, margin: '0 auto' }} />
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: `${theme.spacing.sm} 0` }}>
+                  Deal Redeemed!
+                </h3>
+                <p style={{ color: theme.colors.textSecondary, marginBottom: theme.spacing.md }}>
+                  Show this code at checkout:
+                </p>
+                <div style={styles.redemptionCode}>
+                  {redemptionCode}
+                </div>
+                <p style={{ fontSize: '0.75rem', color: theme.colors.textSecondary }}>
+                  This code is valid for one-time use only
+                </p>
               </div>
-              <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '1rem' }}>
-                This code is valid for one-time use only
-              </p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

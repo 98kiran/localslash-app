@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { supabase } from '../services/supabase';
-import { User, Mail, Lock, MapPin } from 'lucide-react';
+import { User, Mail, Lock, MapPin, ArrowLeft } from 'lucide-react';
+import { theme } from '../styles/theme';
+import { glassEffect, cardStyle, buttonStyle, containerStyle } from '../styles/componentStyles';
 
 const CustomerAuth = ({ onAuthSuccess, setCurrentScreen }) => {
   const [authMode, setAuthMode] = useState('login');
@@ -54,28 +56,189 @@ const CustomerAuth = ({ onAuthSuccess, setCurrentScreen }) => {
   };
 
   const handleGuestMode = () => {
-    // Allow browsing without authentication
-    // Pass null as user to indicate guest mode
     onAuthSuccess(null);
   };
 
+  const styles = {
+    container: {
+      minHeight: '100vh',
+      backgroundColor: theme.colors.background,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: theme.spacing.lg,
+    },
+    
+    backButton: {
+      position: 'absolute',
+      top: theme.spacing.lg,
+      left: theme.spacing.lg,
+      ...buttonStyle,
+      background: 'transparent',
+      color: theme.colors.primary,
+      display: 'flex',
+      alignItems: 'center',
+      gap: theme.spacing.xs,
+      padding: theme.spacing.sm,
+    },
+    
+    card: {
+      ...cardStyle,
+      width: '100%',
+      maxWidth: '28rem',
+      padding: theme.spacing.xl,
+    },
+    
+    header: {
+      textAlign: 'center',
+      marginBottom: theme.spacing.xl,
+    },
+    
+    iconContainer: {
+      display: 'flex',
+      justifyContent: 'center',
+      marginBottom: theme.spacing.lg,
+    },
+    
+    icon: {
+      width: '80px',
+      height: '80px',
+      background: `linear-gradient(135deg, ${theme.colors.primary} 0%, ${theme.colors.secondary} 100%)`,
+      borderRadius: theme.borderRadius.xlarge,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: `0 10px 30px ${theme.colors.primary}30`,
+    },
+    
+    title: {
+      fontSize: 'clamp(1.25rem, 3vw, 1.5rem)',
+      fontWeight: 'bold',
+      marginBottom: theme.spacing.sm,
+      color: theme.colors.textPrimary,
+    },
+    
+    subtitle: {
+      color: theme.colors.textSecondary,
+      fontSize: '0.875rem',
+    },
+    
+    form: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: theme.spacing.md,
+    },
+    
+    inputGroup: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: theme.spacing.sm,
+    },
+    
+    label: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: theme.spacing.sm,
+      fontSize: '0.875rem',
+      color: theme.colors.textPrimary,
+      fontWeight: '500',
+    },
+    
+    input: {
+      width: '100%',
+      padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+      border: `1px solid ${theme.colors.border}`,
+      borderRadius: theme.borderRadius.medium,
+      fontSize: '1rem',
+      backgroundColor: theme.colors.cardBackground,
+      color: theme.colors.textPrimary,
+      transition: 'all 0.3s ease',
+      outline: 'none',
+    },
+    
+    inputFocus: {
+      borderColor: theme.colors.primary,
+      boxShadow: `0 0 0 4px ${theme.colors.primary}10`,
+    },
+    
+    errorBox: {
+      padding: theme.spacing.md,
+      backgroundColor: `${theme.colors.danger}10`,
+      border: `1px solid ${theme.colors.danger}20`,
+      borderRadius: theme.borderRadius.medium,
+      color: theme.colors.danger,
+      fontSize: '0.875rem',
+    },
+    
+    submitButton: {
+      ...buttonStyle,
+      backgroundColor: theme.colors.primary,
+      color: 'white',
+      padding: theme.spacing.md,
+      fontSize: '1rem',
+      fontWeight: '600',
+      marginTop: theme.spacing.sm,
+    },
+    
+    submitButtonDisabled: {
+      opacity: 0.5,
+      cursor: 'not-allowed',
+    },
+    
+    guestButton: {
+      ...buttonStyle,
+      backgroundColor: `${theme.colors.textSecondary}10`,
+      color: theme.colors.textPrimary,
+      padding: theme.spacing.md,
+      fontSize: '1rem',
+      marginTop: theme.spacing.md,
+    },
+    
+    toggleMode: {
+      marginTop: theme.spacing.lg,
+      textAlign: 'center',
+    },
+    
+    toggleButton: {
+      background: 'transparent',
+      border: 'none',
+      color: theme.colors.primary,
+      cursor: 'pointer',
+      fontSize: '0.875rem',
+      textDecoration: 'underline',
+    },
+  };
+
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-      <div style={{ width: '100%', maxWidth: '28rem', backgroundColor: 'white', borderRadius: '0.5rem', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', padding: '2rem' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-            <MapPin size={48} style={{ color: '#2563eb' }} />
+    <div style={styles.container}>
+      <button
+        onClick={() => setCurrentScreen('welcome')}
+        style={styles.backButton}
+        onMouseOver={(e) => e.currentTarget.style.opacity = '0.7'}
+        onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+      >
+        <ArrowLeft size={20} />
+        <span style={{ display: window.innerWidth > 480 ? 'inline' : 'none' }}>Back</span>
+      </button>
+
+      <div style={styles.card}>
+        <div style={styles.header}>
+          <div style={styles.iconContainer}>
+            <div style={styles.icon}>
+              <MapPin size={40} color="white" />
+            </div>
           </div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Welcome to LocalSlash</h2>
-          <p style={{ color: '#6b7280' }}>
+          <h2 style={styles.title}>Welcome to LocalSlash</h2>
+          <p style={styles.subtitle}>
             {authMode === 'login' ? 'Sign in to find amazing deals' : 'Create an account to start saving'}
           </p>
         </div>
         
-        <form onSubmit={handleAuth}>
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: '#374151', fontSize: '0.875rem' }}>
-              <Mail size={16} /> Email
+        <form onSubmit={handleAuth} style={styles.form}>
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>
+              <Mail size={16} color={theme.colors.textSecondary} />
+              Email
             </label>
             <input
               type="email"
@@ -83,19 +246,22 @@ const CustomerAuth = ({ onAuthSuccess, setCurrentScreen }) => {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="you@example.com"
-              style={{
-                width: '100%',
-                padding: '0.5rem 0.75rem',
-                border: '1px solid #d1d5db',
-                borderRadius: '0.375rem',
-                fontSize: '1rem'
+              style={styles.input}
+              onFocus={(e) => {
+                e.target.style.borderColor = theme.colors.primary;
+                e.target.style.boxShadow = `0 0 0 4px ${theme.colors.primary}10`;
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = theme.colors.border;
+                e.target.style.boxShadow = 'none';
               }}
             />
           </div>
           
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: '#374151', fontSize: '0.875rem' }}>
-              <Lock size={16} /> Password
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>
+              <Lock size={16} color={theme.colors.textSecondary} />
+              Password
             </label>
             <input
               type="password"
@@ -103,18 +269,20 @@ const CustomerAuth = ({ onAuthSuccess, setCurrentScreen }) => {
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="••••••••"
-              style={{
-                width: '100%',
-                padding: '0.5rem 0.75rem',
-                border: '1px solid #d1d5db',
-                borderRadius: '0.375rem',
-                fontSize: '1rem'
+              style={styles.input}
+              onFocus={(e) => {
+                e.target.style.borderColor = theme.colors.primary;
+                e.target.style.boxShadow = `0 0 0 4px ${theme.colors.primary}10`;
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = theme.colors.border;
+                e.target.style.boxShadow = 'none';
               }}
             />
           </div>
           
           {authError && (
-            <div style={{ marginBottom: '1rem', padding: '0.75rem', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '0.375rem', color: '#dc2626', fontSize: '0.875rem' }}>
+            <div style={styles.errorBox}>
               {authError}
             </div>
           )}
@@ -123,70 +291,34 @@ const CustomerAuth = ({ onAuthSuccess, setCurrentScreen }) => {
             type="submit"
             disabled={isLoading}
             style={{
-              width: '100%',
-              backgroundColor: '#2563eb',
-              color: 'white',
-              padding: '0.75rem',
-              borderRadius: '0.375rem',
-              fontWeight: '500',
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-              border: 'none',
-              opacity: isLoading ? 0.5 : 1
+              ...styles.submitButton,
+              ...(isLoading ? styles.submitButtonDisabled : {})
             }}
+            onMouseOver={(e) => !isLoading && (e.currentTarget.style.backgroundColor = '#0051D5')}
+            onMouseOut={(e) => !isLoading && (e.currentTarget.style.backgroundColor = theme.colors.primary)}
           >
             {isLoading ? 'Processing...' : (authMode === 'login' ? 'Sign In' : 'Create Account')}
           </button>
         </form>
         
-        <div style={{ marginTop: '1rem' }}>
-          <button
-            onClick={handleGuestMode}
-            style={{
-              width: '100%',
-              backgroundColor: '#f3f4f6',
-              color: '#374151',
-              padding: '0.75rem',
-              borderRadius: '0.375rem',
-              fontWeight: '500',
-              cursor: 'pointer',
-              border: 'none'
-            }}
-          >
-            Continue as Guest
-          </button>
-        </div>
+        <button
+          onClick={handleGuestMode}
+          style={styles.guestButton}
+          onMouseOver={(e) => e.currentTarget.style.backgroundColor = `${theme.colors.textSecondary}20`}
+          onMouseOut={(e) => e.currentTarget.style.backgroundColor = `${theme.colors.textSecondary}10`}
+        >
+          Continue as Guest
+        </button>
         
-        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+        <div style={styles.toggleMode}>
           <button
             onClick={() => {
               setAuthMode(authMode === 'login' ? 'signup' : 'login');
               setAuthError('');
             }}
-            style={{
-              color: '#2563eb',
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              textDecoration: 'underline',
-              fontSize: '0.875rem'
-            }}
+            style={styles.toggleButton}
           >
             {authMode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
-          </button>
-        </div>
-        
-        <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-          <button
-            onClick={() => setCurrentScreen('welcome')}
-            style={{
-              color: '#6b7280',
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '0.875rem'
-            }}
-          >
-            ← Back to Welcome
           </button>
         </div>
       </div>

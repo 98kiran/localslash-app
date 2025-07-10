@@ -39,49 +39,63 @@ const DealsManager = ({ store, deals, onDealsUpdate }) => {
   };
   
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
+  e.preventDefault();
+  setIsLoading(true);
+  
+  try {
+    // Calculate discount_price based on deal_type
+    let calculatedDiscountPrice = null;
     
-    try {
-      const dealData = {
-        store_id: store.id,
-        title: formData.title,
-        description: formData.description,
-        deal_type: formData.deal_type,
-        original_price: formData.original_price ? parseFloat(formData.original_price) : null,
-        discount_price: formData.discount_price ? parseFloat(formData.discount_price) : null,
-        discount_percentage: formData.discount_percentage ? parseInt(formData.discount_percentage) : null,
-        category: formData.category,
-        start_date: formData.start_date,
-        end_date: formData.end_date,
-        terms_conditions: formData.terms_conditions,
-        max_redemptions: formData.max_redemptions ? parseInt(formData.max_redemptions) : null,
-        is_active: true
-      };
-      
-      if (editingDeal) {
-        const { error } = await supabase
-          .from('deals')
-          .update(dealData)
-          .eq('id', editingDeal.id);
-        
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('deals')
-          .insert([dealData]);
-        
-        if (error) throw error;
-      }
-      
-      await onDealsUpdate();
-      resetForm();
-    } catch (error) {
-      console.error('Deal save error:', error);
-    } finally {
-      setIsLoading(false);
+    if (formData.deal_type === 'percentage' && formData.original_price && formData.discount_percentage) {
+      calculatedDiscountPrice = formData.original_price * (1 - formData.discount_percentage / 100);
+    } else if (formData.deal_type === 'fixed_amount' && formData.discount_price) {
+      calculatedDiscountPrice = parseFloat(formData.discount_price);
+    } else if (formData.deal_type === 'bogo' && formData.original_price) {
+      calculatedDiscountPrice = formData.original_price / 2; // BOGO typically means 50% off
+    } else if (formData.original_price) {
+      calculatedDiscountPrice = formData.original_price; // Default to original price if no discount
     }
-  };
+    
+    const dealData = {
+      store_id: store.id,
+      title: formData.title,
+      description: formData.description,
+      deal_type: formData.deal_type,
+      original_price: formData.original_price ? parseFloat(formData.original_price) : null,
+      discount_price: calculatedDiscountPrice || 0, // Ensure it's never null
+      discount_percentage: formData.discount_percentage ? parseInt(formData.discount_percentage) : null,
+      category: formData.category || null,
+      start_date: formData.start_date,
+      end_date: formData.end_date,
+      terms_conditions: formData.terms_conditions || null,
+      max_redemptions: formData.max_redemptions ? parseInt(formData.max_redemptions) : null,
+      is_active: true
+    };
+    
+    if (editingDeal) {
+      const { error } = await supabase
+        .from('deals')
+        .update(dealData)
+        .eq('id', editingDeal.id);
+      
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from('deals')
+        .insert([dealData]);
+      
+      if (error) throw error;
+    }
+    
+    await onDealsUpdate();
+    resetForm();
+  } catch (error) {
+    console.error('Deal save error:', error);
+    alert(`Error saving deal: ${error.message}`);
+  } finally {
+    setIsLoading(false);
+  }
+};
   
   const handleEdit = (deal) => {
     setEditingDeal(deal);
