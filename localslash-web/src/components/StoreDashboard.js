@@ -1,12 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Store, BarChart, ShoppingBag, TrendingUp } from 'lucide-react';
 import DashboardOverview from './DashboardOverview';
 import StoreProfile from './StoreProfile';
 import DealsManager from './DealsManager';
 import Analytics from './Analytics';
+import { supabase } from '../services/supabase';
 
 const StoreDashboard = ({ user, store, deals, setCurrentScreen, onSignOut, onStoreUpdate, onDealsUpdate }) => {
   const [view, setView] = useState('dashboard');
+  
+  // Set up real-time subscription for deal redemptions
+  useEffect(() => {
+    if (!store) return;
+
+    console.log('Setting up real-time subscription for store:', store.id);
+
+    // Subscribe to changes in deals for this store
+    const dealsSubscription = supabase
+      .channel(`deals-${store.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'deals',
+          filter: `store_id=eq.${store.id}`
+        },
+        (payload) => {
+          console.log('Deal updated:', payload);
+          // Refresh deals when any deal is updated
+          onDealsUpdate();
+        }
+      )
+      .subscribe();
+
+    // Subscribe to new redemptions
+    const redemptionsSubscription = supabase
+      .channel(`redemptions-${store.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'deal_redemptions',
+          filter: `store_id=eq.${store.id}`
+        },
+        (payload) => {
+          console.log('New redemption:', payload);
+          // Refresh deals to update counts
+          onDealsUpdate();
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscriptions on unmount
+    return () => {
+      console.log('Cleaning up real-time subscriptions');
+      supabase.removeChannel(dealsSubscription);
+      supabase.removeChannel(redemptionsSubscription);
+    };
+  }, [store, onDealsUpdate]);
+
+  // Auto-refresh every 30 seconds as backup
+  useEffect(() => {
+    if (!store) return;
+
+    const interval = setInterval(() => {
+      console.log('Auto-refreshing deals data');
+      onDealsUpdate();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [store, onDealsUpdate]);
   
   const renderContent = () => {
     switch (view) {
@@ -36,7 +101,24 @@ const StoreDashboard = ({ user, store, deals, setCurrentScreen, onSignOut, onSto
             </div>
           </div>
           
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <button
+              onClick={onDealsUpdate}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '0.375rem',
+                border: '1px solid #d1d5db',
+                backgroundColor: 'white',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+              title="Refresh data"
+            >
+              🔄 Refresh
+            </button>
             <button
               onClick={() => setCurrentScreen('welcome')}
               style={{

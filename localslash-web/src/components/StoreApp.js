@@ -55,15 +55,54 @@ const StoreApp = ({ setCurrentScreen }) => {
   
   const loadDeals = async (storeId) => {
     try {
-      const { data, error } = await supabase
+      console.log('Loading deals for store:', storeId);
+      
+      // Get deals with current redemption counts
+      const { data: dealsData, error: dealsError } = await supabase
         .from('deals')
         .select('*')
         .eq('store_id', storeId)
         .order('created_at', { ascending: false });
       
-      if (data) setDeals(data);
+      if (dealsError) throw dealsError;
+      
+      // Get actual redemption counts from deal_redemptions table
+      const { data: redemptionCounts, error: countError } = await supabase
+        .from('deal_redemptions')
+        .select('deal_id')
+        .eq('store_id', storeId);
+      
+      if (!countError && redemptionCounts) {
+        // Count redemptions per deal
+        const countMap = {};
+        redemptionCounts.forEach(r => {
+          countMap[r.deal_id] = (countMap[r.deal_id] || 0) + 1;
+        });
+        
+        // Update deals with actual counts
+        const dealsWithCounts = dealsData.map(deal => ({
+          ...deal,
+          current_redemptions: countMap[deal.id] || 0
+        }));
+        
+        console.log('Deals with redemption counts:', dealsWithCounts);
+        setDeals(dealsWithCounts);
+        
+        // Also update the current_redemptions in deals table for consistency
+        for (const deal of dealsWithCounts) {
+          if (deal.current_redemptions !== (deal.current_redemptions || 0)) {
+            await supabase
+              .from('deals')
+              .update({ current_redemptions: deal.current_redemptions })
+              .eq('id', deal.id);
+          }
+        }
+      } else {
+        setDeals(dealsData || []);
+      }
     } catch (error) {
       console.error('Load deals error:', error);
+      setDeals([]);
     }
   };
   

@@ -28,65 +28,82 @@ const CustomerDashboard = ({ user, userLocation, setCurrentScreen, onSignOut }) 
     if (user) {
       loadFavorites();
     }
-  }, [userLocation, user, filters, searchQuery]); // Added searchQuery to dependencies
+  }, [userLocation, user, filters]); // Removed searchQuery from dependencies to prevent double loading
 
   const loadNearbyDeals = async () => {
     try {
       setIsLoading(true);
       
-      console.log('Loading deals with user location:', userLocation);
-      console.log('Search query:', searchQuery);
+      console.log('🔍 Loading deals with:', {
+        userLocation,
+        searchQuery,
+        filters
+      });
       
-      // Load all active deals with store information
-      const { data, error } = await supabase
+      // First, let's try a simpler query approach
+      const { data: dealsData, error: dealsError } = await supabase
         .from('deals')
-        .select(`
-          *,
-          stores (
-            id,
-            name,
-            address,
-            latitude,
-            longitude,
-            logo_url,
-            phone
-          )
-        `)
+        .select('*')
         .eq('is_active', true)
         .gte('end_date', new Date().toISOString());
 
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
+      if (dealsError) {
+        console.error('❌ Error loading deals:', dealsError);
+        throw dealsError;
       }
 
-      console.log('Deals loaded from database:', data);
-
-      if (!data || data.length === 0) {
-        console.log('No deals found in database');
+      if (!dealsData || dealsData.length === 0) {
+        console.log('⚠️ No active deals found');
         setDeals([]);
         return;
       }
 
+      // Now load stores separately
+      const storeIds = [...new Set(dealsData.map(deal => deal.store_id))];
+      const { data: storesData, error: storesError } = await supabase
+        .from('stores')
+        .select('*')
+        .in('id', storeIds);
+
+      if (storesError) {
+        console.error('❌ Error loading stores:', storesError);
+        throw storesError;
+      }
+
+      // Combine deals with stores
+      const storesMap = {};
+      storesData.forEach(store => {
+        storesMap[store.id] = store;
+      });
+
+      const dealsWithStores = dealsData.map(deal => ({
+        ...deal,
+        stores: storesMap[deal.store_id] || null
+      }));
+
+      console.log('✅ Raw deals from database:', dealsWithStores);
+
       // Filter by search query if present
-      let filteredDeals = data;
+      let filteredDeals = dealsWithStores;
       if (searchQuery.trim()) {
-        filteredDeals = data.filter(deal => 
+        filteredDeals = dealsWithStores.filter(deal => 
           deal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           deal.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          deal.stores.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (deal.stores && deal.stores.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
           (deal.category && deal.category.toLowerCase().includes(searchQuery.toLowerCase()))
         );
+        console.log('🔍 After search filter:', filteredDeals.length, 'deals');
       }
 
       // Filter by category if not 'all'
       if (filters.category !== 'all') {
         filteredDeals = filteredDeals.filter(deal => deal.category === filters.category);
+        console.log('📁 After category filter:', filteredDeals.length, 'deals in category:', filters.category);
       }
 
       // If no user location, show all filtered deals without distance
       if (!userLocation || !userLocation.latitude || !userLocation.longitude) {
-        console.log('No user location, showing all deals');
+        console.log('📍 No user location available, showing all deals without distance');
         setDeals(filteredDeals);
         return;
       }
@@ -94,22 +111,28 @@ const CustomerDashboard = ({ user, userLocation, setCurrentScreen, onSignOut }) 
       // Calculate distances and filter by radius
       const dealsWithDistance = filteredDeals.map(deal => {
         if (!deal.stores || !deal.stores.latitude || !deal.stores.longitude) {
-          console.log('Deal missing store location:', deal);
+          console.log('⚠️ Deal missing store location:', deal.title);
           return { ...deal, distance: 999 }; // Large distance for deals without location
         }
         
         const distance = calculateDistance(
           userLocation.latitude,
           userLocation.longitude,
-          deal.stores.latitude,
-          deal.stores.longitude
+          parseFloat(deal.stores.latitude),
+          parseFloat(deal.stores.longitude)
         );
         
-        console.log(`Distance for ${deal.title}: ${distance} miles`);
+        console.log(`📏 Distance for "${deal.title}": ${distance.toFixed(2)} miles`);
         return { ...deal, distance };
-      }).filter(deal => deal.distance <= filters.radius);
+      }).filter(deal => {
+        const withinRadius = deal.distance <= filters.radius;
+        if (!withinRadius) {
+          console.log(`❌ "${deal.title}" filtered out - ${deal.distance.toFixed(2)} miles > ${filters.radius} miles radius`);
+        }
+        return withinRadius;
+      });
 
-      console.log('Deals after distance filter:', dealsWithDistance);
+      console.log(`✅ After distance filter: ${dealsWithDistance.length} deals within ${filters.radius} miles`);
 
       // Sort deals
       const sortedDeals = dealsWithDistance.sort((a, b) => {
@@ -123,9 +146,10 @@ const CustomerDashboard = ({ user, userLocation, setCurrentScreen, onSignOut }) 
         return 0;
       });
 
+      console.log('✅ Final deals to display:', sortedDeals.length);
       setDeals(sortedDeals);
     } catch (error) {
-      console.error('Error loading deals:', error);
+      console.error('❌ Error loading deals:', error);
       setDeals([]); // Set empty array on error
     } finally {
       setIsLoading(false);
@@ -161,6 +185,7 @@ const CustomerDashboard = ({ user, userLocation, setCurrentScreen, onSignOut }) 
 
   const handleSearch = (e) => {
     e.preventDefault();
+    console.log('🔍 Searching for:', searchQuery);
     loadNearbyDeals(); // Reload deals with search
   };
 
@@ -346,19 +371,44 @@ const CustomerDashboard = ({ user, userLocation, setCurrentScreen, onSignOut }) 
       background: theme.colors.primary,
       borderRadius: theme.borderRadius.small,
     },
+    
+    debugInfo: {
+      backgroundColor: '#fee2e2',
+      padding: '1rem',
+      borderRadius: '0.5rem',
+      marginBottom: '1rem',
+      fontSize: '0.875rem',
+    }
   };
 
   const renderContent = () => {
     switch (view) {
       case 'home':
         return (
-          <NearbyDeals 
-            deals={deals} 
-            favorites={favorites}
-            user={user}
-            onFavoritesUpdate={loadFavorites}
-            isLoading={isLoading}
-          />
+          <>
+            {/* Debug Information */}
+            {deals.length === 0 && !isLoading && (
+              <div style={styles.debugInfo}>
+                <h4 style={{ marginBottom: '0.5rem' }}>🐛 Debug Info:</h4>
+                <p>• User Location: {userLocation ? `${userLocation.latitude.toFixed(4)}, ${userLocation.longitude.toFixed(4)}` : 'Not available'}</p>
+                <p>• Search Query: "{searchQuery}" {searchQuery ? `(${searchQuery.length} chars)` : '(empty)'}</p>
+                <p>• Category Filter: {filters.category}</p>
+                <p>• Radius: {filters.radius} miles</p>
+                <p>• Sort By: {filters.sortBy}</p>
+                <p style={{ marginTop: '0.5rem', fontWeight: 'bold' }}>
+                  💡 Try: Clear search, set category to "All", increase radius, or check console for details
+                </p>
+              </div>
+            )}
+            
+            <NearbyDeals 
+              deals={deals} 
+              favorites={favorites}
+              user={user}
+              onFavoritesUpdate={loadFavorites}
+              isLoading={isLoading}
+            />
+          </>
         );
       case 'favorites':
         return (
@@ -401,25 +451,25 @@ const CustomerDashboard = ({ user, userLocation, setCurrentScreen, onSignOut }) 
           </span>
         </div>
         <div>
-                {user ? (
-        <button
-          onClick={onSignOut}
-          style={styles.navButton}
-          onMouseOver={(e) => e.currentTarget.style.background = `${theme.colors.primary}20`}
-          onMouseOut={(e) => e.currentTarget.style.background = `${theme.colors.primary}10`}
-        >
-          Sign Out
-        </button>
-      ) : (
-        <button
-          onClick={() => setCurrentScreen('welcome')} // Changed from 'customerApp' to 'welcome'
-          style={styles.navButton}
-          onMouseOver={(e) => e.currentTarget.style.background = `${theme.colors.primary}20`}
-          onMouseOut={(e) => e.currentTarget.style.background = `${theme.colors.primary}10`}
-        >
-          Sign In
-        </button>
-      )}
+          {user ? (
+            <button
+              onClick={onSignOut}
+              style={styles.navButton}
+              onMouseOver={(e) => e.currentTarget.style.background = `${theme.colors.primary}20`}
+              onMouseOut={(e) => e.currentTarget.style.background = `${theme.colors.primary}10`}
+            >
+              Sign Out
+            </button>
+          ) : (
+            <button
+              onClick={() => setCurrentScreen('welcome')}
+              style={styles.navButton}
+              onMouseOver={(e) => e.currentTarget.style.background = `${theme.colors.primary}20`}
+              onMouseOut={(e) => e.currentTarget.style.background = `${theme.colors.primary}10`}
+            >
+              Sign In
+            </button>
+          )}
         </div>
       </nav>
       
@@ -472,8 +522,8 @@ const CustomerDashboard = ({ user, userLocation, setCurrentScreen, onSignOut }) 
         <SearchFilters 
           filters={filters}
           onFiltersChange={(newFilters) => {
+            console.log('📝 Filters changed:', newFilters);
             setFilters(newFilters);
-            loadNearbyDeals();
           }}
           onClose={() => setShowFilters(false)}
         />

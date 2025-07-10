@@ -24,64 +24,103 @@ const CustomerProfile = ({ user }) => {
   }, [user]);
 
   const loadProfileData = async () => {
-    try {
-      setIsLoading(true);
+  try {
+    setIsLoading(true);
 
-      // Load redemptions
-      const { data: redemptions, error: redemptionError } = await supabase
-        .from('deal_redemptions')
+    // Load redemptions first
+    const { data: redemptions, error: redemptionError } = await supabase
+      .from('deal_redemptions')
+      .select('*')
+      .eq('customer_id', user.id)
+      .order('redeemed_at', { ascending: false });
+
+    if (redemptionError) throw redemptionError;
+
+    // Get deal IDs
+    const dealIds = redemptions?.map(r => r.deal_id) || [];
+    
+    // Load deals separately if we have redemptions
+    let enrichedRedemptions = [];
+    if (dealIds.length > 0) {
+      const { data: deals, error: dealsError } = await supabase
+        .from('deals')
         .select(`
-          *,
-          deals (
-            title,
-            discount_percentage,
-            discount_price,
-            original_price,
-            stores (
-              name
-            )
-          )
+          id,
+          title,
+          discount_percentage,
+          discount_price,
+          original_price,
+          store_id
         `)
-        .eq('customer_id', user.id)
-        .order('redeemed_at', { ascending: false });
+        .in('id', dealIds);
 
-      if (redemptionError) throw redemptionError;
+      if (dealsError) throw dealsError;
 
-      // Calculate stats
-      const totalSavings = redemptions?.reduce((sum, r) => {
-        if (r.deals.original_price && r.deals.discount_price) {
-          return sum + (r.deals.original_price - r.deals.discount_price);
-        }
-        return sum;
-      }, 0) || 0;
+      // Get store IDs
+      const storeIds = [...new Set(deals.map(d => d.store_id))];
+      
+      // Load stores
+      const { data: stores, error: storesError } = await supabase
+        .from('stores')
+        .select('id, name')
+        .in('id', storeIds);
 
-      // Load favorites count
-      const { count: dealCount } = await supabase
-        .from('favorites')
-        .select('*', { count: 'exact', head: true })
-        .eq('customer_id', user.id)
-        .not('deal_id', 'is', null);
+      if (storesError) throw storesError;
 
-      const { count: storeCount } = await supabase
-        .from('favorites')
-        .select('*', { count: 'exact', head: true })
-        .eq('customer_id', user.id)
-        .is('deal_id', null);
-
-      setStats({
-        totalRedemptions: redemptions?.length || 0,
-        totalSavings: totalSavings,
-        favoriteDeals: dealCount || 0,
-        favoriteStores: storeCount || 0
+      // Create lookup maps
+      const storesMap = {};
+      stores.forEach(s => storesMap[s.id] = s);
+      
+      const dealsMap = {};
+      deals.forEach(d => {
+        dealsMap[d.id] = {
+          ...d,
+          stores: storesMap[d.store_id]
+        };
       });
 
-      setRecentRedemptions(redemptions?.slice(0, 5) || []);
-    } catch (error) {
-      console.error('Error loading profile data:', error);
-    } finally {
-      setIsLoading(false);
+      // Combine everything
+      enrichedRedemptions = redemptions.map(r => ({
+        ...r,
+        deals: dealsMap[r.deal_id]
+      }));
     }
-  };
+
+    // Calculate stats
+    const totalSavings = enrichedRedemptions.reduce((sum, r) => {
+      if (r.deals?.original_price && r.deals?.discount_price) {
+        return sum + (r.deals.original_price - r.deals.discount_price);
+      }
+      return sum;
+    }, 0);
+
+    // Load favorites count
+    const { count: dealCount } = await supabase
+      .from('favorites')
+      .select('*', { count: 'exact', head: true })
+      .eq('customer_id', user.id)
+      .not('deal_id', 'is', null);
+
+    const { count: storeCount } = await supabase
+      .from('favorites')
+      .select('*', { count: 'exact', head: true })
+      .eq('customer_id', user.id)
+      .is('deal_id', null);
+
+    setStats({
+      totalRedemptions: redemptions?.length || 0,
+      totalSavings: totalSavings,
+      favoriteDeals: dealCount || 0,
+      favoriteStores: storeCount || 0
+    });
+
+    setRecentRedemptions(enrichedRedemptions.slice(0, 5));
+  } catch (error) {
+    console.error('Error loading profile data:', error);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handlePreferenceChange = async (key, value) => {
     setPreferences(prev => ({ ...prev, [key]: value }));

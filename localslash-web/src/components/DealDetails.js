@@ -44,26 +44,39 @@ const DealDetails = ({ deal, onClose, user, isFavorite, onFavoritesUpdate }) => 
   };
 
   const handleRedeem = async () => {
-    if (!user) {
-      alert('Please sign in to redeem deals');
-      return;
-    }
+  // Add this debug line
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  console.log('User at redemption time:', authUser);
+  
+  if (!authUser) {
+    alert('Not authenticated! Please sign in.');
+    return;
+  }
+  console.log('Supabase URL:', supabase.supabaseUrl);
+  console.log('Is this your project URL?');
+  
+  // Rest of your code...
 
     setIsRedeeming(true);
     
     try {
       const code = `LSH${Date.now().toString(36).toUpperCase()}`;
       
-      const { error } = await supabase
-        .from('deal_redemptions')
-        .insert([{
-          deal_id: deal.id,
-          customer_id: user.id,
-          store_id: deal.store_id,
-          redemption_code: code
-        }]);
-      
-      if (error) throw error;
+      const { data, error } = await supabase
+      .rpc('redeem_deal_direct', {
+        p_deal_id: deal.id,
+        p_customer_id: user.id,
+        p_store_id: deal.store_id,
+        p_code: code
+      });
+
+    if (error) throw error;
+    if (data.success) {
+      setRedemptionCode(code);
+      setShowRedemptionCode(true);
+    } else {
+      throw new Error(data.error);
+    }
       
       await supabase
         .from('deals')
@@ -108,7 +121,7 @@ const DealDetails = ({ deal, onClose, user, isFavorite, onFavoritesUpdate }) => 
       right: 0,
       bottom: 0,
       backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      zIndex: 50,
+      zIndex: 150, // Increased to be above bottom nav
       display: 'flex',
       alignItems: 'flex-end',
       justifyContent: 'center',
@@ -119,10 +132,12 @@ const DealDetails = ({ deal, onClose, user, isFavorite, onFavoritesUpdate }) => 
       width: '100%',
       maxWidth: '48rem',
       borderRadius: '1rem 1rem 0 0',
-      maxHeight: '85vh',
+      maxHeight: 'calc(90vh - 80px)', // Account for bottom nav
+      marginBottom: '60px', // Space for bottom navigation
       display: 'flex',
       flexDirection: 'column',
-      animation: 'slideUp 0.3s ease-out'
+      animation: 'slideUp 0.3s ease-out',
+      position: 'relative',
     },
     
     header: {
@@ -148,7 +163,7 @@ const DealDetails = ({ deal, onClose, user, isFavorite, onFavoritesUpdate }) => 
       flex: 1,
       overflowY: 'auto',
       padding: theme.spacing.lg,
-      paddingBottom: '120px', // Space for fixed button
+      paddingBottom: theme.spacing.lg, // Reduced padding
     },
     
     dealHeader: {
@@ -283,14 +298,11 @@ const DealDetails = ({ deal, onClose, user, isFavorite, onFavoritesUpdate }) => 
     },
     
     fixedBottom: {
-      position: 'fixed',
-      bottom: 0,
-      left: 0,
-      right: 0,
       backgroundColor: theme.colors.cardBackground,
       padding: theme.spacing.lg,
       borderTop: `1px solid ${theme.colors.border}`,
       boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.05)',
+      flexShrink: 0, // Prevent shrinking
     },
     
     redeemButton: {
@@ -344,6 +356,13 @@ const DealDetails = ({ deal, onClose, user, isFavorite, onFavoritesUpdate }) => 
         border-radius: ${theme.borderRadius.xlarge} !important;
         margin: ${theme.spacing.lg};
         max-height: 80vh !important;
+        margin-bottom: 0 !important;
+      }
+    }
+    
+    @media (max-width: ${theme.breakpoints.mobile}) {
+      .deal-modal {
+        max-height: calc(100vh - 120px) !important;
       }
     }
   `;
@@ -471,7 +490,7 @@ const DealDetails = ({ deal, onClose, user, isFavorite, onFavoritesUpdate }) => 
             )}
           </div>
 
-          {/* Fixed Bottom Section */}
+          {/* Redeem Button Section */}
           <div style={styles.fixedBottom}>
             {!showRedemptionCode ? (
               <button
