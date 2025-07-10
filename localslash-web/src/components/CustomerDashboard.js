@@ -438,14 +438,6 @@ const CustomerDashboard = ({ user, userLocation, setCurrentScreen, onSignOut }) 
       {/* Top Navigation */}
       <nav style={styles.topNav}>
         <div style={styles.navLeft}>
-          <button
-            onClick={() => setCurrentScreen('welcome')}
-            style={styles.backButton}
-            onMouseOver={(e) => e.currentTarget.style.opacity = '0.7'}
-            onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
-          >
-            <ArrowLeft size={20} />
-          </button>
           <span style={styles.navTitle}>
             {view === 'home' ? 'Discover' : view === 'favorites' ? 'Favorites' : 'Profile'}
           </span>

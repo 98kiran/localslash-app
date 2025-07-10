@@ -120,18 +120,6 @@ const StoreDashboard = ({ user, store, deals, setCurrentScreen, onSignOut, onSto
               🔄 Refresh
             </button>
             <button
-              onClick={() => setCurrentScreen('welcome')}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '0.375rem',
-                border: '1px solid #d1d5db',
-                backgroundColor: 'white',
-                cursor: 'pointer'
-              }}
-            >
-              Back
-            </button>
-            <button
               onClick={onSignOut}
               style={{
                 padding: '0.5rem 1rem',
