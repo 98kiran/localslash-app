@@ -19,6 +19,26 @@ const DealsManager = ({ store, deals, onDealsUpdate }) => {
     terms_conditions: '',
     max_redemptions: ''
   });
+
+  const getDiscountDisplay = (deal) => {
+  if (deal.deal_type === 'percentage' && deal.discount_percentage) {
+    return `${deal.discount_percentage}%`;
+  } else if (deal.deal_type === 'fixed_amount' && deal.original_price && deal.discount_price) {
+    // Show the SAVINGS amount, not the discount price
+    const savings = deal.original_price - deal.discount_price;
+    return `$${savings.toFixed(2)}`;
+  } else if (deal.deal_type === 'bogo') {
+    return 'BOGO';
+  } else if (deal.deal_type === 'other') {
+    // For 'other' type, try to calculate savings if prices are available
+    if (deal.original_price && deal.discount_price) {
+      const savings = deal.original_price - deal.discount_price;
+      return `$${savings.toFixed(2)}`;
+    }
+    return 'Special';
+  }
+  return '-';
+};
   
   const resetForm = () => {
     setFormData({

@@ -1,9 +1,45 @@
 import React from 'react';
 import { ShoppingBag, Eye, CheckCircle, TrendingUp } from 'lucide-react';
 
-const DashboardOverview = ({ store, deals }) => {
+const DashboardOverview = ({ store, deals = [] }) => {
   const activeDeals = deals.filter(d => d.is_active);
   const totalRedemptions = deals.reduce((sum, deal) => sum + (deal.current_redemptions || 0), 0);
+  
+  // Function to properly display discount information
+  const getDiscountDisplay = (deal) => {
+    if (!deal) return '-';
+    
+    if (deal.deal_type === 'bogo') {
+      return 'BOGO';
+    } else if (deal.deal_type === 'percentage' && deal.discount_percentage) {
+      return `${deal.discount_percentage}%`;
+    } else if (deal.deal_type === 'fixed_amount' && deal.original_price && deal.discount_price) {
+      const savings = deal.original_price - deal.discount_price;
+      return `$${savings.toFixed(2)}`;
+    } else if (deal.deal_type === 'other') {
+      if (deal.original_price && deal.discount_price) {
+        const savings = deal.original_price - deal.discount_price;
+        return `$${savings.toFixed(2)}`;
+      }
+      return 'Special';
+    }
+    
+    // Handle case where prices are null or undefined
+    return '-';
+  };
+
+  const getDealBadgeColor = (dealType) => {
+    switch (dealType) {
+      case 'bogo':
+        return '#8b5cf6'; // Purple
+      case 'percentage':
+        return '#3b82f6'; // Blue
+      case 'fixed_amount':
+        return '#10b981'; // Green
+      default:
+        return '#6b7280'; // Gray
+    }
+  };
   
   return (
     <div>
@@ -55,7 +91,7 @@ const DashboardOverview = ({ store, deals }) => {
       {/* Recent deals */}
       <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
         <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem' }}>Recent Deals</h3>
-        {deals.length === 0 ? (
+        {!deals || deals.length === 0 ? (
           <p style={{ color: '#6b7280', textAlign: 'center', padding: '2rem' }}>
             No deals yet. Create your first deal to start attracting customers!
           </p>
@@ -75,7 +111,12 @@ const DashboardOverview = ({ store, deals }) => {
                   <tr key={deal.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
                     <td style={{ padding: '0.75rem' }}>{deal.title}</td>
                     <td style={{ padding: '0.75rem' }}>
-                      {deal.discount_percentage ? `${deal.discount_percentage}%` : `$${deal.discount_price}`}
+                      <span style={{ 
+                        fontWeight: '600', 
+                        color: getDealBadgeColor(deal.deal_type)
+                      }}>
+                        {getDiscountDisplay(deal)}
+                      </span>
                     </td>
                     <td style={{ padding: '0.75rem' }}>
                       <span style={{

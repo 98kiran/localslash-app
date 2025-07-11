@@ -179,24 +179,34 @@ const DealCard = ({ deal, isFavorite, user, onFavoritesUpdate, onClick }) => {
           </div>
 
           {/* Price Display */}
-          {deal.original_price && (
-            <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ 
-                textDecoration: 'line-through', 
-                color: '#9ca3af',
-                fontSize: '0.875rem'
-              }}>
-                ${deal.original_price.toFixed(2)}
-              </span>
-              <span style={{ 
-                color: '#059669',
-                fontWeight: 'bold',
-                fontSize: '1.125rem'
-              }}>
-                ${deal.discount_price.toFixed(2)}
-              </span>
-            </div>
-          )}
+
+{/* Price display */}
+{deal.original_price && deal.deal_type !== 'bogo' && (
+  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+    <span style={{ textDecoration: 'line-through', color: '#9ca3af' }}>
+      ${deal.original_price.toFixed(2)}
+    </span>
+    {deal.discount_price !== null && deal.discount_price !== undefined && (
+      <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#059669' }}>
+        ${deal.discount_price.toFixed(2)}
+      </span>
+    )}
+  </div>
+)}
+
+{/* Special display for BOGO deals */}
+{deal.deal_type === 'bogo' && deal.original_price && (
+  <div style={{ fontSize: '1.125rem', fontWeight: '600', color: '#8b5cf6' }}>
+    Buy 1 at ${deal.original_price.toFixed(2)}, Get 1 FREE
+  </div>
+)}
+
+{/* Display for deals without prices */}
+{!deal.original_price && !deal.discount_price && (
+  <div style={{ fontSize: '1rem', fontWeight: '600', color: '#6b7280' }}>
+    See store for details
+  </div>
+)}
         </div>
       </div>
     </div>
