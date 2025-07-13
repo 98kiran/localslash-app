@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
 import CustomerAuth from './CustomerAuth';
-import CustomerDashboard from './CustomerDashboard';
+import ModernCustomerDashboard from './ModernCustomerDashboard';
+
 
 const CustomerApp = ({ setCurrentScreen }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -86,12 +87,12 @@ const CustomerApp = ({ setCurrentScreen }) => {
   
   // Main dashboard
   return (
-    <CustomerDashboard
-      user={user}
-      userLocation={userLocation}
-      setCurrentScreen={setCurrentScreen}
-      onSignOut={handleSignOut}
-    />
+    <ModernCustomerDashboard
+  user={user}
+  userLocation={userLocation}
+  setCurrentScreen={setCurrentScreen}
+  onSignOut={handleSignOut}
+/>
   );
 };
 
