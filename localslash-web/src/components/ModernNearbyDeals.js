@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MapPin, Clock, Tag, Heart, TrendingUp, Zap, ChevronRight } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import DealModal from './DealModal';
+import DealCard from './DealCard';
 
 const ModernNearbyDeals = ({ deals, favorites, user, onFavoritesUpdate, isLoading, viewMode = 'grid', theme }) => {
   const [selectedDeal, setSelectedDeal] = useState(null);
@@ -29,6 +30,7 @@ const ModernNearbyDeals = ({ deals, favorites, user, onFavoritesUpdate, isLoadin
       }
     } catch (error) {
       console.error('Error checking redeemed deals:', error);
+      setRedeemedDeals(new Set());
     }
   };
 
@@ -268,7 +270,7 @@ const ModernNearbyDeals = ({ deals, favorites, user, onFavoritesUpdate, isLoadin
       alignItems: 'center',
       justifyContent: 'center',
       transition: 'all 0.3s',
-      zIndex: 10,
+      zIndex: 20,
       backdropFilter: 'blur(10px)',
       WebkitBackdropFilter: 'blur(10px)',
       flexShrink: 0, // Prevent button from shrinking
@@ -515,207 +517,33 @@ const ModernNearbyDeals = ({ deals, favorites, user, onFavoritesUpdate, isLoadin
     );
   }
 
-  const renderDealCard = (deal) => {
-    const isFavorite = favorites.some(f => f.deal_id === deal.id);
-    const isHovered = hoveredCard === deal.id;
-    const daysLeft = getDaysLeft(deal.end_date);
-    const isUrgent = daysLeft <= 3;
-
-    if (viewMode === 'list') {
-      return (
-        <div
-          key={deal.id}
-          style={{
-            ...styles.dealCard,
-            ...styles.dealCardList,
-            ...(isHovered ? styles.dealCardHover : {})
-          }}
-          onClick={() => handleDealClick(deal)}
-          onMouseEnter={() => setHoveredCard(deal.id)}
-          onMouseLeave={() => setHoveredCard(null)}
-        >
-          {/* Left section - Content */}
-          <div style={styles.dealContentList}>
-            <div style={styles.dealHeaderList}>
-              <div style={styles.storeName}>
-                <MapPin size={16} />
-                {deal.stores?.name}
-                {deal.distance && ` • ${deal.distance.toFixed(1)} mi`}
-              </div>
-              <h3 style={styles.dealTitleList}>{deal.title}</h3>
-            </div>
-            
-            <div style={styles.dealMetaList}>
-              <span style={{
-                ...styles.metaBadge,
-                background: getDealTypeGradient(deal.deal_type),
-              }}>
-                <Zap size={14} />
-                {getDiscountDisplay(deal)}
-              </span>
-              {isUrgent && (
-                <span style={styles.urgentBadge}>
-                  <Clock size={14} />
-                  {daysLeft} days left
-                </span>
-              )}
-            </div>
-          </div>
-          
-          {/* Right section - Price and Favorite */}
-          <div style={styles.dealRightSection}>
-            <button
-              style={{
-                ...styles.favoriteButton,
-                background: isFavorite
-                  ? `linear-gradient(135deg, ${theme.accent} 0%, ${theme.accentSecondary} 100%)`
-                  : theme.glass,
-              }}
-              onClick={(e) => handleFavoriteToggle(e, deal.id, deal.store_id)}
-            >
-              <Heart size={20} fill={isFavorite ? 'white' : 'none'} color={isFavorite ? 'white' : theme.textSecondary} />
-            </button>
-
-            <div style={styles.priceSectionList}>
-              {deal.original_price && (
-                <span style={styles.originalPrice}>${deal.original_price}</span>
-              )}
-              {deal.discount_price && (
-                <span style={styles.discountPriceList}>${deal.discount_price}</span>
-              )}
-            </div>
-          </div>
-
-          {/* Redeemed overlay */}
-          {redeemedDeals.has(deal.id) && (
-            <div style={styles.redeemedOverlay}>
-              <div style={styles.redeemedLabel}>
-                Already Redeemed
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // Grid View Card
-    return (
-      <div
-        key={deal.id}
-        style={{
-          ...styles.dealCard,
-          ...(isHovered ? styles.dealCardHover : {})
-        }}
-        onClick={() => handleDealClick(deal)}
-        onMouseEnter={() => setHoveredCard(deal.id)}
-        onMouseLeave={() => setHoveredCard(null)}
-      >
-        <div style={{ ...styles.cardGlow, opacity: isHovered ? 1 : 0 }} />
-        
-        {/* Deal Badge */}
-        <div style={{ ...styles.dealBadge, background: getDealTypeGradient(deal.deal_type) }}>
-          <Zap size={16} />
-          {getDiscountDisplay(deal)}
-        </div>
-        
-        {/* Favorite Button */}
-        <button
-          style={{
-            ...styles.favoriteButton,
-            ...styles.favoriteButtonGrid,
-            background: isFavorite ? `linear-gradient(135deg, ${theme.accent} 0%, ${theme.accentSecondary} 100%)` : theme.glass,
-          }}
-          onClick={(e) => handleFavoriteToggle(e, deal.id, deal.store_id)}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-        >
-          <Heart size={20} fill={isFavorite ? 'white' : 'none'} color={isFavorite ? 'white' : theme.textSecondary} />
-        </button>
-        
-        {/* Deal Image Placeholder */}
-        <div style={styles.dealImage}>
-          <div style={{
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: `linear-gradient(135deg, ${theme.accent}10 0%, ${theme.accentSecondary}10 100%)`,
-          }}>
-            <Tag size={60} color={theme.border} />
-          </div>
-        </div>
-        
-        {/* Deal Content */}
-        <div style={styles.dealContent}>
-          <div style={styles.dealHeader}>
-            <div style={styles.storeName}>
-              <MapPin size={16} />
-              {deal.stores?.name}
-              {deal.distance && ` • ${deal.distance.toFixed(1)} mi`}
-            </div>
-            <h3 style={styles.dealTitle}>{deal.title}</h3>
-            {deal.description && (
-              <p style={styles.dealDescription}>{deal.description}</p>
-            )}
-          </div>
-          
-          <div style={styles.dealMeta}>
-            <div style={styles.metaItem}>
-              <Clock size={16} />
-              {daysLeft} days left
-            </div>
-            {deal.current_redemptions !== undefined && (
-              <div style={styles.metaItem}>
-                <TrendingUp size={16} />
-                {deal.current_redemptions} claimed
-              </div>
-            )}
-          </div>
-          
-          <div style={styles.priceSection}>
-            {deal.original_price && (
-              <span style={styles.originalPrice}>${deal.original_price}</span>
-            )}
-            {deal.discount_price && (
-              <span style={styles.discountPrice}>${deal.discount_price}</span>
-            )}
-          </div>
-          
-          <div style={styles.dealFooter}>
-            {isUrgent && (
-              <span style={styles.urgentBadge}>
-                <Zap size={14} />
-                Limited
-              </span>
-            )}
-            <span style={{
-              ...styles.viewDealButton,
-              gap: isHovered ? '0.75rem' : '0.5rem',
-              marginLeft: 'auto'
-            }}>
-              View Deal
-              <ChevronRight size={16} />
-            </span>
-          </div>
-        </div>
-
-        {/* Redeemed overlay */}
-        {redeemedDeals.has(deal.id) && (
-          <div style={styles.redeemedOverlay}>
-            <div style={styles.redeemedLabel}>
-              Already Redeemed
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
 
   return (
     <div style={styles.container}>
       <div style={viewMode === 'grid' ? styles.dealsGrid : styles.dealsList}>
-        {deals.map(renderDealCard)}
+        {deals.map(deal => {
+          const isFavorite = favorites.some(f => f.deal_id === deal.id);
+          return (
+            <DealCard
+              key={deal.id}
+              deal={deal}
+              isFavorite={isFavorite}
+              user={user}
+              onFavoritesUpdate={onFavoritesUpdate}
+              onClick={() => handleDealClick(deal)}
+              viewMode={viewMode}
+              currentTheme={{
+                cardBg: theme.cardBg,
+                text: theme.text,
+                textSecondary: theme.textSecondary,
+                border: theme.border,
+                accent: theme.accent,
+                accentSecondary: theme.accentSecondary,
+                glass: theme.glass
+              }}
+            />
+          );
+        })}
       </div>
       
       {selectedDeal && (

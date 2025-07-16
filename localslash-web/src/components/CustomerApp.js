@@ -6,14 +6,20 @@ import ModernCustomerDashboard from './ModernCustomerDashboard';
 
 const CustomerApp = ({ setCurrentScreen }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState(null);
-  const [userLocation, setUserLocation] = useState(null);
+  const [userLocation, setUserLocation] = useState({
+    latitude: 32.7767,
+    longitude: -96.7970
+  });
   
   // Check authentication on mount
   useEffect(() => {
     checkAuth();
-    getUserLocation();
+    // Get location in background, don't block UI
+    setTimeout(() => {
+      getUserLocation();
+    }, 100);
   }, []);
   
   const checkAuth = async () => {
@@ -25,8 +31,6 @@ const CustomerApp = ({ setCurrentScreen }) => {
       }
     } catch (error) {
       console.error('Auth check error:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
   
@@ -41,19 +45,13 @@ const CustomerApp = ({ setCurrentScreen }) => {
         },
         (error) => {
           console.error('Error getting location:', error);
-          // Default to Dallas area if location fails
-          setUserLocation({
-            latitude: 32.7767,
-            longitude: -96.7970
-          });
+          // Keep the default location if location fails
+        },
+        {
+          timeout: 10000, // 10 second timeout
+          enableHighAccuracy: false
         }
       );
-    } else {
-      // Default location if geolocation not supported
-      setUserLocation({
-        latitude: 32.7767,
-        longitude: -96.7970
-      });
     }
   };
   

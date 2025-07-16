@@ -109,20 +109,21 @@ const DealModal = ({ deal, onClose, user, theme, isAlreadyRedeemed, onRedeemSucc
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 1000,
-      padding: '20px',
+      padding: '16px',
       backdropFilter: 'blur(10px)',
     },
 
     modal: {
       background: theme.cardBg,
       borderRadius: '20px',
-      width: '100%',
-      maxWidth: '420px',
+      width: '95vw',
+      maxWidth: '1200px',
       maxHeight: '90vh',
-      overflow: 'hidden',
+      overflow: 'auto',
       position: 'relative',
       border: `1px solid ${theme.border}`,
       backdropFilter: 'blur(20px)',
+      boxSizing: 'border-box',
     },
 
     header: {
@@ -400,10 +401,69 @@ const DealModal = ({ deal, onClose, user, theme, isAlreadyRedeemed, onRedeemSucc
   };
 
   return (
-    <div style={styles.overlay} onClick={onClose}>
-      <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+    <>
+      <style>{`
+        .deal-modal {
+          max-width: 1200px !important;
+          width: 95vw !important;
+        }
+        @media (max-width: 768px) {
+          .deal-modal {
+            max-width: 95vw !important;
+            max-height: 95vh !important;
+            border-radius: 16px !important;
+          }
+          .deal-modal-header {
+            padding: 20px !important;
+          }
+          .deal-modal-content {
+            padding: 20px !important;
+          }
+          .deal-modal-info-grid {
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+          }
+          .deal-modal-title {
+            font-size: 20px !important;
+          }
+          .deal-modal-action-area {
+            padding: 16px 20px 20px !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .deal-modal {
+            max-width: 98vw !important;
+            max-height: 98vh !important;
+            border-radius: 12px !important;
+          }
+          .deal-modal-header {
+            padding: 16px !important;
+          }
+          .deal-modal-content {
+            padding: 16px !important;
+          }
+          .deal-modal-title {
+            font-size: 18px !important;
+          }
+          .deal-modal-action-area {
+            padding: 12px 16px 16px !important;
+          }
+        }
+        @media (min-width: 769px) {
+          .deal-modal {
+            max-width: 600px !important;
+            min-width: 500px !important;
+          }
+        }
+      `}</style>
+      <div style={styles.overlay} onClick={onClose}>
+        <div 
+          className="deal-modal" 
+          style={styles.modal} 
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* Header */}
-        <div style={styles.header}>
+        <div className="deal-modal-header" style={styles.header}>
           <button
             style={styles.closeButton}
             onClick={onClose}
@@ -418,7 +478,7 @@ const DealModal = ({ deal, onClose, user, theme, isAlreadyRedeemed, onRedeemSucc
             {getDiscountDisplay(deal)}
           </div>
 
-          <h2 style={styles.dealTitle}>{deal.title}</h2>
+          <h2 className="deal-modal-title" style={styles.dealTitle}>{deal.title}</h2>
           
           <div style={styles.storeName}>
             <MapPin size={16} />
@@ -427,13 +487,13 @@ const DealModal = ({ deal, onClose, user, theme, isAlreadyRedeemed, onRedeemSucc
         </div>
 
         {/* Content */}
-        <div style={styles.content}>
+        <div className="deal-modal-content" style={styles.content}>
           {deal.description && (
             <p style={styles.description}>{deal.description}</p>
           )}
 
           {/* Info Grid */}
-          <div style={styles.infoGrid}>
+          <div className="deal-modal-info-grid" style={styles.infoGrid}>
             <div style={styles.infoItem}>
               <div style={styles.infoLabel}>Expires in</div>
               <div style={{
@@ -504,7 +564,7 @@ const DealModal = ({ deal, onClose, user, theme, isAlreadyRedeemed, onRedeemSucc
         </div>
 
         {/* Action Area */}
-        <div style={styles.actionArea}>
+        <div className="deal-modal-action-area" style={styles.actionArea}>
           {redemptionError && (
             <div style={styles.errorMessage}>
               <AlertCircle size={16} />
@@ -548,6 +608,7 @@ const DealModal = ({ deal, onClose, user, theme, isAlreadyRedeemed, onRedeemSucc
         </div>
       </div>
     </div>
+    </>
   );
 };
 

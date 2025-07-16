@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
+import { useTheme } from '../contexts/ThemeContext';
 import StoreAuth from './StoreAuth';
 import StoreSetup from './StoreSetup';
 import StoreDashboard from './StoreDashboard';
+import StoreSelector from './StoreSelector';
+import ThemeToggle from './ThemeToggle';
 
 
 const StoreApp = ({ setCurrentScreen }) => {
+  const theme = useTheme();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [store, setStore] = useState(null);
+  const [stores, setStores] = useState([]);
+  const [selectedStore, setSelectedStore] = useState(null);
   const [deals, setDeals] = useState([]);
   const [showStoreSetup, setShowStoreSetup] = useState(false);
   
@@ -24,7 +29,7 @@ const StoreApp = ({ setCurrentScreen }) => {
       if (user) {
         setUser(user);
         setIsAuthenticated(true);
-        await loadStore(user.id);
+        await loadStores(user.id);
       }
     } catch (error) {
       console.error('Auth check error:', error);
@@ -33,23 +38,30 @@ const StoreApp = ({ setCurrentScreen }) => {
     }
   };
   
-  const loadStore = async (userId) => {
+  const loadStores = async (userId) => {
     try {
       const { data, error } = await supabase
         .from('stores')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .order('created_at', { ascending: false });
       
-      if (data) {
-        setStore(data);
-        await loadDeals(data.id);
-      } else if (error && error.code === 'PGRST116') {
-        // No store found, show setup
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setStores(data);
+        // Auto-select the first store or previously selected store
+        const lastSelectedStoreId = localStorage.getItem('lastSelectedStoreId');
+        const storeToSelect = data.find(s => s.id === lastSelectedStoreId) || data[0];
+        setSelectedStore(storeToSelect);
+        await loadDeals(storeToSelect.id);
+      } else {
+        // No stores found, show setup
         setShowStoreSetup(true);
       }
     } catch (error) {
-      console.error('Load store error:', error);
+      console.error('Load stores error:', error);
+      setShowStoreSetup(true);
     }
   };
   
@@ -109,40 +121,86 @@ const StoreApp = ({ setCurrentScreen }) => {
   const handleAuthSuccess = async (user) => {
     setUser(user);
     setIsAuthenticated(true);
-    await loadStore(user.id);
+    await loadStores(user.id);
   };
   
-  const handleSetupComplete = async (store) => {
-    setStore(store);
+  const handleSetupComplete = async (newStore) => {
+    // Add the new store to the stores array
+    const updatedStores = [...stores, newStore];
+    setStores(updatedStores);
+    setSelectedStore(newStore);
     setShowStoreSetup(false);
+    await loadDeals(newStore.id);
+  };
+  
+  const handleStoreSelect = async (store) => {
+    setSelectedStore(store);
+    localStorage.setItem('lastSelectedStoreId', store.id);
     await loadDeals(store.id);
+  };
+  
+  const handleCreateStore = () => {
+    setShowStoreSetup(true);
   };
   
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     setIsAuthenticated(false);
     setUser(null);
-    setStore(null);
+    setStores([]);
+    setSelectedStore(null);
     setDeals([]);
+    localStorage.removeItem('lastSelectedStoreId');
   };
   
   const handleStoreUpdate = (updatedStore) => {
-    setStore(updatedStore);
+    // Update the store in the stores array
+    const updatedStores = stores.map(store => 
+      store.id === updatedStore.id ? updatedStore : store
+    );
+    setStores(updatedStores);
+    setSelectedStore(updatedStore);
   };
   
   const handleDealsUpdate = async () => {
-    if (store) {
-      await loadDeals(store.id);
+    if (selectedStore) {
+      await loadDeals(selectedStore.id);
     }
   };
   
   // Loading screen
   if (isLoading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ 
+        minHeight: '100vh', 
+        background: theme.colors.background,
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center' 
+      }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⏳</div>
-          <p>Loading...</p>
+          <div style={{
+            width: '60px',
+            height: '60px',
+            border: `4px solid ${theme.colors.border}`,
+            borderTopColor: theme.colors.primary,
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 1rem'
+          }} />
+          <p style={{ 
+            fontSize: theme.typography.fontSize.lg,
+            fontWeight: theme.typography.fontWeight.medium,
+            color: theme.colors.textPrimary 
+          }}>
+            Loading LocalSlash...
+          </p>
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
         </div>
       </div>
     );
@@ -155,20 +213,65 @@ const StoreApp = ({ setCurrentScreen }) => {
   
   // Store setup screen
   if (showStoreSetup) {
-    return <StoreSetup user={user} onSetupComplete={handleSetupComplete} />;
+    return (
+      <StoreSetup 
+        user={user} 
+        onSetupComplete={handleSetupComplete} 
+        onSignOut={handleSignOut}
+        onBack={() => setShowStoreSetup(false)}
+        hasExistingStores={stores.length > 0}
+      />
+    );
   }
   
-  // Main dashboard
+  // Main dashboard with store selector
   return (
-    <StoreDashboard
-      user={user}
-      store={store}
-      deals={deals}
-      setCurrentScreen={setCurrentScreen}
-      onSignOut={handleSignOut}
-      onStoreUpdate={handleStoreUpdate}
-      onDealsUpdate={handleDealsUpdate}
-    />
+    <div style={{ 
+      minHeight: '100vh',
+      background: theme.colors.background,
+    }}>
+      {/* Top Navigation Bar */}
+      <nav style={{
+        padding: `${theme.spacing.md} ${theme.spacing.lg}`,
+        background: theme.colors.navBackground,
+        borderBottom: `1px solid ${theme.colors.border}`,
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        position: 'sticky',
+        top: 0,
+        zIndex: theme.zIndex.sticky,
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          maxWidth: '1200px',
+          margin: '0 auto',
+          gap: theme.spacing.md,
+        }}>
+          {/* Store Selector */}
+          <StoreSelector
+            stores={stores}
+            selectedStore={selectedStore}
+            onStoreSelect={handleStoreSelect}
+            onCreateStore={handleCreateStore}
+          />
+          
+          {/* Theme Toggle - Removed duplicate, only keep in StoreDashboard */}
+        </div>
+      </nav>
+      
+      {/* Main Content */}
+      <StoreDashboard
+        user={user}
+        store={selectedStore}
+        deals={deals}
+        setCurrentScreen={setCurrentScreen}
+        onSignOut={handleSignOut}
+        onStoreUpdate={handleStoreUpdate}
+        onDealsUpdate={handleDealsUpdate}
+      />
+    </div>
   );
 };
 

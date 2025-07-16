@@ -20,7 +20,6 @@ const ModernCustomerDashboard = ({ user, userLocation, setCurrentScreen, onSignO
   const [showFilters, setShowFilters] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [viewMode, setViewMode] = useState('grid'); // grid or list
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   // Theme configuration
   const theme = {
@@ -53,15 +52,10 @@ const ModernCustomerDashboard = ({ user, userLocation, setCurrentScreen, onSignO
   const currentTheme = isDarkMode ? theme.dark : theme.light;
 
   useEffect(() => {
-    const handleMouseMove = (e) => setMousePosition({ x: e.clientX, y: e.clientY });
-    window.addEventListener('mousemove', handleMouseMove);
-    
     loadNearbyDeals();
     if (user) {
       loadFavorites();
     }
-
-    return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [userLocation, user, filters]);
 
   const loadNearbyDeals = async () => {
@@ -166,14 +160,17 @@ const ModernCustomerDashboard = ({ user, userLocation, setCurrentScreen, onSignO
 
   const loadFavorites = async () => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('favorites')
         .select('deal_id, store_id')
         .eq('customer_id', user.id);
 
-      if (data) {
-        setFavorites(data);
+      if (error) {
+        console.error('Error loading favorites:', error);
+        return;
       }
+
+      setFavorites(data || []);
     } catch (error) {
       console.error('Error loading favorites:', error);
     }
@@ -217,8 +214,8 @@ const ModernCustomerDashboard = ({ user, userLocation, setCurrentScreen, onSignO
       right: 0,
       bottom: 0,
       background: isDarkMode 
-        ? `radial-gradient(circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(99, 102, 241, 0.15) 0%, transparent 50%)`
-        : `radial-gradient(circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(99, 102, 241, 0.1) 0%, transparent 50%)`,
+        ? 'radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%)'
+        : 'radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.1) 0%, transparent 50%)',
       pointerEvents: 'none',
       transition: 'background 0.3s ease',
       zIndex: 1,
@@ -455,8 +452,8 @@ const ModernCustomerDashboard = ({ user, userLocation, setCurrentScreen, onSignO
     // Floating Action Button
     floatingButton: {
       position: 'fixed',
-      bottom: '5rem',
-      right: '1.5rem',
+      bottom: '6rem',
+      right: '2rem',
       width: '3.5rem',
       height: '3.5rem',
       borderRadius: '50%',
@@ -470,6 +467,12 @@ const ModernCustomerDashboard = ({ user, userLocation, setCurrentScreen, onSignO
       boxShadow: '0 20px 40px -15px rgba(99, 102, 241, 0.5)',
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       zIndex: 40,
+      '@media (min-width: 768px)': {
+        bottom: '2rem',
+        right: '3rem',
+        width: '4rem',
+        height: '4rem',
+      },
     },
   };
 

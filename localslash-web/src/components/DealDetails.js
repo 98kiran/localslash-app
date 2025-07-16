@@ -162,7 +162,7 @@ const DealDetails = ({ deal, onClose, user, isFavorite, onFavoritesUpdate, onDea
       console.error('Error redeeming deal:', error);
       
       // User-friendly error messages
-      let errorMessage = 'Error redeeming deal. ';
+      let errorMessage = 'Failed to redeem deal. ';
       
       if (error.message?.includes('already redeemed') || error.message?.includes('duplicate')) {
         errorMessage = 'You have already redeemed this deal.';
@@ -171,7 +171,7 @@ const DealDetails = ({ deal, onClose, user, isFavorite, onFavoritesUpdate, onDea
       } else if (localDeal.max_redemptions && localDeal.current_redemptions >= localDeal.max_redemptions) {
         errorMessage = 'This deal has reached its redemption limit.';
       } else {
-        errorMessage += 'Please try again later.';
+        errorMessage += 'Please try again.';
       }
       
       alert(errorMessage);
@@ -226,21 +226,21 @@ const DealDetails = ({ deal, onClose, user, isFavorite, onFavoritesUpdate, onDea
       backgroundColor: 'rgba(0, 0, 0, 0.5)',
       zIndex: 150,
       display: 'flex',
-      alignItems: 'flex-end',
+      alignItems: 'center',
       justifyContent: 'center',
+      padding: '20px',
     },
     
     modal: {
       backgroundColor: theme.colors.cardBackground,
-      width: '100%',
-      maxWidth: '48rem',
-      borderRadius: '1rem 1rem 0 0',
-      maxHeight: 'calc(90vh - 80px)',
-      marginBottom: '60px',
+      width: '90vw',
+      maxWidth: '1000px',
+      borderRadius: '1rem',
+      maxHeight: '85vh',
       display: 'flex',
       flexDirection: 'column',
-      animation: 'slideUp 0.3s ease-out',
       position: 'relative',
+      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
     },
     
     header: {
@@ -266,7 +266,8 @@ const DealDetails = ({ deal, onClose, user, isFavorite, onFavoritesUpdate, onDea
       flex: 1,
       overflowY: 'auto',
       padding: theme.spacing.lg,
-      paddingBottom: theme.spacing.lg,
+      paddingBottom: theme.spacing.xl,
+      maxHeight: 'calc(85vh - 160px)', // Ensure scrolling works
     },
     
     dealHeader: {
@@ -467,25 +468,12 @@ const DealDetails = ({ deal, onClose, user, isFavorite, onFavoritesUpdate, onDea
   const responsiveStyles = `
     @keyframes slideUp {
       from {
-        transform: translateY(100%);
+        transform: scale(0.9);
+        opacity: 0;
       }
       to {
-        transform: translateY(0);
-      }
-    }
-    
-    @media (min-width: ${theme.breakpoints.tablet}) {
-      .deal-modal {
-        border-radius: ${theme.borderRadius.xlarge} !important;
-        margin: ${theme.spacing.lg};
-        max-height: 80vh !important;
-        margin-bottom: 0 !important;
-      }
-    }
-    
-    @media (max-width: ${theme.breakpoints.mobile}) {
-      .deal-modal {
-        max-height: calc(100vh - 120px) !important;
+        transform: scale(1);
+        opacity: 1;
       }
     }
   `;
@@ -496,10 +484,34 @@ const DealDetails = ({ deal, onClose, user, isFavorite, onFavoritesUpdate, onDea
   return (
     <>
       <style>{responsiveStyles}</style>
-      <div style={styles.overlay} onClick={onClose}>
+      <div 
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 150,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+        }} 
+        onClick={onClose}
+      >
         <div 
-          className="deal-modal"
-          style={styles.modal} 
+          style={{
+            backgroundColor: theme.colors.cardBackground,
+            width: '90vw',
+            maxWidth: '1000px',
+            borderRadius: '1rem',
+            maxHeight: '85vh',
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'relative',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
